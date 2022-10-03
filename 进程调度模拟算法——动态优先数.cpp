@@ -11,7 +11,7 @@ typedef struct pcb {
 	struct  pcb* next;
 }PCB,*PCBlist;
 
-void sort(PCBlist& L, PCB* p) {
+void sort(PCBlist& L, PCB* p) {//每个新建的节点都在合适的地方插入，按优先数从大到小
 	if (L->next == NULL) {
 		p->next = L->next;
 		L->next = p;
@@ -68,7 +68,7 @@ void display(PCB *p){
 	cout << "进程的已运行时间：" << p->rtime << endl;
 }
 void running(PCB*p) {
-	if (p->rtime < p->ntime) {
+	if (p->rtime < p->ntime) {//模拟进程运行，每次运行，运行时间加1，优先数减1
 		p->state = 'r';
 		p->super--;
 		p->rtime++;
