@@ -1,0 +1,216 @@
+﻿#include<iostream>
+using namespace std;
+int job_num = 0;
+int content = 100;
+typedef struct node
+{
+    int start;
+    int length;
+    char flag[20];
+}job;
+class ChainList {
+public:
+    struct ChainNode//内存分区表
+    {
+        string name;//作业名称
+        int start;
+        int length;
+        ChainNode* next = nullptr;
+        ChainNode(string name, int start, int length) {
+            this->name = name;
+            this->start = 0;
+            this->length = length;
+            this->next = nullptr;
+        }
+        ChainNode(ChainNode const& node) { //拷贝复制函数
+            name = node.name;
+            start = node.start;
+            length = node.length;
+            next = node.next;
+        }
+    }*tmp = nullptr;
+    ChainNode* chain_head;
+
+    ChainList() {
+        chain_head = new ChainNode("chain_head", 0, 0);
+    }
+
+    void display() {
+        cout << "作业名\t起始地址\t所占内存" << endl;
+        ChainNode* tmp = chain_head->next;
+        int begin = 0;
+        while (true) {
+            if (tmp == nullptr) {
+                if (begin != content)
+                    cout << "空闲区        " << begin << "         " << content - begin << endl;
+                break;
+            }
+            if (begin == 0) {
+                if (chain_head->next->start != 0)
+                    cout << "空闲区        " << 0 << "         " << chain_head->next->start - begin << endl;
+                else
+                    cout << tmp->name << "          " << tmp->start << "          " << tmp->length << endl;
+            }
+            else {
+                if (tmp->start == begin) {
+                    cout << tmp->name << "          " << tmp->start << "         " << tmp->length << endl;
+                }
+                else if (tmp->start > begin) {
+                    cout << "空闲区        " << begin << "           " << tmp->start - begin << endl;
+                    begin = tmp->start;
+                    continue;
+                }
+            }
+            begin = tmp->start + tmp->length;
+            tmp = tmp->next;
+        }
+    }
+
+    bool queue(string name, int length) {   //内存不足，就排队
+        ChainNode tmp(name, 0, length);
+
+    }
+} main_chain;
+//链表为空，相当于空闲区在前面
+bool insert(ChainList::ChainNode new_comer) {
+    //链表为空，相当于空闲区在前面
+    if (content >= new_comer.length) {    //1.资源满足
+        main_chain.chain_head->next = new ChainList::ChainNode(new_comer);
+        new_comer.start = 0;
+        job_num++;
+        cout << "在地址为 0 处插入成功！" << endl;
+        return true;
+    }
+    else {      //2.资源不足
+        cout << "资源不足，插入失败。" << endl;
+        return false;
+    }
+}
+
+bool firstFit(ChainList::ChainNode new_comer) {
+    //链表为空，相当于空闲区在前面
+    if (job_num == 0) {
+        return insert(new_comer);
+    }
+    //链表不为空
+    ChainList::ChainNode* tmp1 = main_chain.chain_head->next, * tmp2 = tmp1->next;  //双指针
+    //空闲区夹中间
+    for (; tmp2 != nullptr; tmp1 = tmp1->next, tmp2 = tmp2->next) {
+        int sub = tmp2->start - (tmp1->start + tmp1->length);
+        if (sub >= new_comer.length) {     //资源满足
+            new_comer.next = tmp1->next;
+            tmp1->next = &new_comer;
+            new_comer.start = tmp1->start + tmp1->length;
+            job_num++;
+            cout << "在地址为 " << new_comer.start << " 处插入成功" << endl;
+            return true;
+        }
+    }
+    //空闲区在最后
+    if (content - (tmp1->start + tmp1->length) >= new_comer.length) {  //资源满足
+        new_comer.next = tmp1->next;
+        new_comer.next = nullptr;
+        new_comer.start = tmp1->start + tmp1->length;
+        tmp1->next = new ChainList::ChainNode(new_comer);
+        job_num++;
+        cout << "在地址为 " << new_comer.start << " 处插入成功" << endl;
+        return true;
+    }
+    cout << "资源不足，插入失败。" << endl;
+    return false;
+}
+//回收算法
+bool Recycle() {
+    string name;
+    cout << "请输入要回收的作业名：";
+    cin >> name;
+    ChainList::ChainNode* tmp1 = main_chain.chain_head, * tmp2 = tmp1->next;  //双指针
+    while (tmp2 != nullptr && tmp2->name != name) {     //循环直到：指针遍历完毕 或者 找到这个作业
+        tmp1 = tmp1->next;
+        tmp2 = tmp2->next;
+    }
+    if (tmp2 == nullptr)     //未找到该作业
+        return false;
+    //若找到
+    else {
+        if (tmp1->name == "chain_head") {     //若只有一个作业
+            if (tmp2->next == nullptr && tmp2->length == content)
+                cout << "无上、下邻空间，本内存回收成功！";
+            else
+                cout << "有下邻空间，本内存回收成功！";
+        }
+        else if (tmp1->start + tmp1->length < tmp2->start) {
+            //1. 有上、下邻空间
+            if (tmp2->next == nullptr) {
+                cout << "有上、下邻空间，本内存回收成功！";
+            }
+            else {   //2. 有上邻空间
+                cout << "有上邻空间，回收成功！";
+            }
+        }
+        //3. 有下邻空间
+        if (tmp2->next == NULL){
+            cout << "有下邻空间，本内存回收成功！";
+        } 
+        else{
+        if (tmp2->next->start > tmp2->start + tmp2->length) {
+            cout << "有下邻空间，本内存回收成功！";
+        }
+        //4. 无上、下邻空间
+        else
+            cout << "无上、下邻空间，本内存回收成功！";
+        }
+        cout << endl;
+        tmp1->next = tmp2->next;
+        job_num--;
+        return true;
+    }
+}
+ChainList init() {
+    ChainList link = ChainList();
+    return link;
+}
+
+ChainList::ChainNode create_node() {
+    string name;
+    int length;
+    cout << "请输入作业名："; cin >> name;
+    cout << "请输入作业所需资源：";
+    cin >> length;
+    return ChainList::ChainNode(name, 0, length);
+}
+
+void menu()//提供服务菜单
+{
+    cout << "1.添加作业(使用首次适应算法).";
+    cout << "\n2.回收内存算法.";
+    cout << "\n3.结束程序.\n";
+
+    while (true) {
+        int m;
+        cin >> m;
+
+        switch (m) {
+        case 1:
+            firstFit(create_node());
+            break;
+        case 2:
+            Recycle();
+            break;
+        case 3:
+            cout << "程序成功终止！";
+            return;
+        default:
+            cout << "输入错误!,请重新输入\n";
+            menu();
+        }
+        main_chain.display();
+    }
+}
+int main()
+{
+    menu();
+    cout << endl;
+    system("pause");//终端窗口停靠
+    return 0;
+}
