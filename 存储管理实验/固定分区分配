@@ -1,0 +1,109 @@
+#include<iostream>
+#include<fstream>
+#include<windows.h>
+using namespace std;
+
+#define PART_NUM 4
+#define PCB_NUM 5
+
+struct Partition{
+	int addr;
+	int size;
+	int state;//0表示空闲，>0表示已分配，里面存储向相应的进程ID
+}PartList[PART_NUM];
+
+struct PCB {
+	int pcbID;
+	int size;
+	char state;//w r f
+	int ntime;//所需运行时间
+	int rtime;//运行时间
+}PCBList[PCB_NUM];
+
+void init() {
+	fstream file;
+	file.open("pcbandpartition.txt");
+	for (int i = 0; i < PCB_NUM+PART_NUM; i++){
+		if (i < PCB_NUM) {
+			file >> PCBList[i].pcbID >> PCBList[i].size >> PCBList[i].state >> PCBList[i].ntime;
+		}
+		else {
+			int j = i - PCB_NUM;
+			file >> PartList[j].addr >> PartList[j].size;
+			PartList[j].state = 0;
+		}
+	}
+	//冒泡排序，让分区从小到大排序
+	for (int i = 0; i < PART_NUM-1; i++){
+		for (int j = 0; j < PART_NUM-i-1; j++) {
+			if (PartList[j].size > PartList[j + 1].size) {
+				Partition temp = PartList[j + 1];
+				PartList[j + 1] = PartList[j];
+				PartList[j] = temp;
+			}
+		}
+	}
+	file.close();
+}
+void Display() {
+	for (Partition p : PartList) {
+		cout << p.addr << "          " << p.size << "KB          " << p.state << endl;
+	}
+}
+bool checkEmpty() {
+	bool isEmpty = true;
+	for (Partition q : PartList) {
+		if (q.state != 0)isEmpty = false;
+	}
+	return isEmpty;
+}
+void Running() {
+	int i = 0;
+	do {
+		system("cls");
+		cout << "分区地址    " << "分区大小    " << "分区状态" << endl;
+		//装载到分区中
+		if (i < PCB_NUM) {
+			if (PCBList[i].size > PartList[PART_NUM - 1].size) {
+				cout << "执行进程" << PCBList[i].pcbID << "时内存不足!!!" << endl;
+				i++;
+				continue;
+			}
+			for (int j = 0; j < PART_NUM; j++) {
+				if (PCBList[i].size <= PartList[j].size && !PartList[j].state) {
+					PCBList[i].state = 'r';
+					PartList[j].state = PCBList[i].pcbID;
+					break;
+				}
+				if (j == PART_NUM - 1) {
+					i--;
+				}
+			}
+		}
+		//模拟运行
+		for (int i = 0; i < PCB_NUM;i++) {
+			if (PCBList[i].state == 'r') {
+				if (PCBList[i].rtime < PCBList[i].ntime) {
+					PCBList[i].rtime++;
+				}
+				else{
+					PCBList[i].state = 'f';
+					for (int j = 0; j < PART_NUM;j++) {
+						if (PCBList[i].pcbID == PartList[j].state) {
+							PartList[j].state = 0;
+						}
+					}
+				}
+			}
+		}
+		i++;
+		Display();
+		Sleep(1000);
+	} while (!checkEmpty());
+}
+
+int main() {
+	init();
+	Running();
+	return 0;
+}
