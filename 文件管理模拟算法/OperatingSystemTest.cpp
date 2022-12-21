@@ -4,12 +4,13 @@
 using namespace std;
 #define USERNUM 10
 #define MAX_OPEN 5
-typedef struct file
+
+typedef struct file//文件
 {
     string file_name;
     bool file_protect[3];
     bool open_file_protect[3]; //仅在文件打开时有效
-    int  read, write; //定义为读写指针
+    int  read, write; //定义为读写指针,不懂
     int  file_length;
     struct file* next;
     file() {
@@ -26,7 +27,7 @@ typedef struct file
     }
 } File;
 
-typedef struct folder {
+typedef struct folder {//文件夹
     string folder_name;
     struct folder* folder_child;
     struct folder* next;
@@ -49,7 +50,7 @@ typedef struct afd {//文件打开时放入afd下
     }
 }AFD;
 
-typedef struct mfd {
+typedef struct mfd {//一个用户一个mfd
     string user_name;
     Folder* folder_root;
     AFD afd;
@@ -60,6 +61,7 @@ typedef struct mfd {
     }
 }MFD[USERNUM];
 
+//初始化用户
 void init(MFD mfd) {
     fstream file;
     file.open("user_name.txt");
@@ -72,6 +74,7 @@ void init(MFD mfd) {
     file.close();
 }
 
+//从MFD中找到一个用户名并返回索引，未找到则让用户重新输入
 int findUserName(string user_name, MFD mfd) {
     bool is_find = false;
     for (int i = 0; i < USERNUM; i++) {
@@ -88,6 +91,7 @@ int findUserName(string user_name, MFD mfd) {
     }
 }
 
+//将文件路径按照'/'拆分成多个字符串
 vector<string> splitPath(const string& path) {
     vector<string> names;
     string p;
@@ -102,10 +106,10 @@ vector<string> splitPath(const string& path) {
     return names;
 }
 
-Folder* pathPoint(struct mfd mfdsg, const string& path) {
+ //将文件路径转换成文件夹指针
+Folder* pathPointer(struct mfd mfdsg, const string& path) {
     vector<string> names = splitPath(path);
     Folder* q = mfdsg.folder_root;
-    
     for (int i = 1; i < names.size(); i++) {
         for (Folder* p = q->folder_child; p->next != NULL; p = p->next) {
             if (p->next->folder_name == names[i]) q = p->next;
@@ -115,7 +119,7 @@ Folder* pathPoint(struct mfd mfdsg, const string& path) {
 }
 
 void createFile(struct mfd mfdsg,const string& cur_path) {
-    Folder* path = pathPoint(mfdsg, cur_path);
+    Folder* path = pathPointer(mfdsg, cur_path);
     File* file = new File();
     cout << mfdsg.user_name << ">>" << "新建文件名：";
     cin >> file->file_name;
@@ -139,7 +143,7 @@ void createFile(struct mfd mfdsg,const string& cur_path) {
 
 }
 void deleteFile(struct mfd mfdsg,const string& cur_path) {
-    Folder* path = pathPoint(mfdsg, cur_path);
+    Folder* path = pathPointer(mfdsg, cur_path);
     string file_name;
     cout << mfdsg.user_name << ">>" << "请输入欲删除的文件名：";
     cin >> file_name;
@@ -154,7 +158,7 @@ void deleteFile(struct mfd mfdsg,const string& cur_path) {
     cout << endl << "!!!未找到文件!!!" << endl << endl;
 }
 void openFile(struct mfd mfdsg, const string& cur_path) {
-    Folder* path = pathPoint(mfdsg, cur_path);
+    Folder* path = pathPointer(mfdsg, cur_path);
     if (mfdsg.afd.length >= MAX_OPEN) {
         cout << endl << "!!!打开文件数已达上限!!!" << endl << endl;
         return;
@@ -244,7 +248,7 @@ void writeFile(struct mfd mfdsg) {
 }
 
 void reviseFileName(struct mfd mfdsg,const string& cur_path) {
-    Folder* path = pathPoint(mfdsg, cur_path);
+    Folder* path = pathPointer(mfdsg, cur_path);
     string file_name;
     cout << mfdsg.user_name << ">>" << "请输入欲修改的文件名：";
     cin >> file_name;
@@ -258,7 +262,7 @@ void reviseFileName(struct mfd mfdsg,const string& cur_path) {
     cout << endl << "!!!未找到文件!!!" << endl << endl;
 }
 void reviseFilePermission(struct mfd mfdsg, const string& cur_path) {
-    Folder* path = pathPoint(mfdsg, cur_path);
+    Folder* path = pathPointer(mfdsg, cur_path);
     string file_name;
     cout << mfdsg.user_name << ">>" << "请输入欲修改的文件名：";
     cin >> file_name;
@@ -273,7 +277,7 @@ void reviseFilePermission(struct mfd mfdsg, const string& cur_path) {
 }
 
 void createFolder(struct mfd mfdsg, const string& cur_path) {
-    Folder* path = pathPoint(mfdsg, cur_path);
+    Folder* path = pathPointer(mfdsg, cur_path);
     Folder* folder=new Folder();
     cout << mfdsg.user_name << ">>" << "请输入欲创建的文件夹名：";
     cin >> folder->folder_name;
@@ -290,7 +294,7 @@ void createFolder(struct mfd mfdsg, const string& cur_path) {
 }
 
 void openFolder(struct mfd mfdsg, string& cur_path) {
-    Folder* path = pathPoint(mfdsg, cur_path);
+    Folder* path = pathPointer(mfdsg, cur_path);
     string folder_name;
     cout << mfdsg.user_name << ">>" << "请输入欲打开的文件夹名：";
     cin >> folder_name;
@@ -304,7 +308,7 @@ void openFolder(struct mfd mfdsg, string& cur_path) {
 }
 
 void deleteFolder(struct mfd mfdsg, const string& cur_path) {
-    Folder* path = pathPoint(mfdsg, cur_path);
+    Folder* path = pathPointer(mfdsg, cur_path);
     string folder_name;
     cout << mfdsg.user_name << ">>" << "请输入欲删除的文件夹名：";
     cin >> folder_name;
@@ -332,7 +336,7 @@ void backLevel(struct mfd mfdsg, string& cur_path) {
 }
 
 void Display(struct mfd mfdsg,const string& cur_path) {
-    Folder* path = pathPoint(mfdsg, cur_path);
+    Folder* path = pathPointer(mfdsg, cur_path);
     cout << "-------------------" << cur_path << "文件夹------------------ " << endl;
     for (Folder* p = path->folder_child; p->next != NULL; p = p->next) {
         cout << "-" << p->next->folder_name << endl;
@@ -348,6 +352,7 @@ void Display(struct mfd mfdsg,const string& cur_path) {
     cout << "------------------------------------------------" << endl;
 }
 
+//执行操作
 void executeOperation(struct mfd mfdsg,string& cur_path) {
     system("cls");
     int command;
