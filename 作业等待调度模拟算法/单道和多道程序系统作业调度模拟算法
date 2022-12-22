@@ -137,6 +137,32 @@ public:
 			}
 		}
 	}
+	//优先级优先
+	void SF() {
+		Elemtype p1 = JCBHead->next;
+		Elemtype p2 = p1->next;
+		for (int i = 0; i < size - 1; i++) {
+			p1 = JCBHead->next;
+			p2 = p1->next;
+			while (p2 != NULL) {
+				if (p1->super < p2->super) {
+					p1->next = p2->next;
+					if (p2->next != NULL)
+						p2->next->prior = p1;
+					p2->prior = p1->prior;
+					p1->prior->next = p2;
+					p2->next = p1;
+					p1->prior = p2;
+
+					p2 = p1->next;
+				}
+				else {
+					p1 = p1->next;
+					p2 = p2->next;
+				}
+			}
+		}
+	}
 	//计算每个作业的响应比
 	void HRNindi() {
 		Elemtype p = JCBHead->next;
